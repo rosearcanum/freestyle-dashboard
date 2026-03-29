@@ -2,7 +2,6 @@
 //  ICE ARENA FREESTYLE DASHBOARD — script.js
 // =============================================
 
-// -------  CONFIGURATION  -------
 const API_KEY        = 'AIzaSyBypFcSsyYeFzmIMsYSGuL22MU7Mvr-npc';
 const SPREADSHEET_ID = '18kC_kfghnpjap9y5FXd79ikmzDIOdtNOgI89uWZ5uHo';
 const SHEET_NAME     = '1st';
@@ -15,13 +14,16 @@ const URGENT_MINUTES = 5;
 let refreshTimer    = null;
 let countdownTimer  = null;
 let nextRefreshSecs = REFRESH_MS / 1000;
+let tickInterval    = null;
+let allSkaterData   = [];   // full dataset, filtered by time for display
 
-document.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('load', () => {
     startClock();
     fetchData();
     startRefreshCycle();
 });
 
+// ---- CLOCK ----
 function startClock() {
     function tick() {
         const el = document.getElementById('live-clock');
@@ -31,6 +33,7 @@ function startClock() {
     setInterval(tick, 1000);
 }
 
+// ---- AUTO REFRESH ----
 function startRefreshCycle() {
     nextRefreshSecs = REFRESH_MS / 1000;
     clearInterval(countdownTimer);
@@ -48,6 +51,7 @@ function startRefreshCycle() {
     }, REFRESH_MS);
 }
 
+// ---- FETCH ----
 async function fetchData() {
     setStatus('connecting');
     const range = encodeURIComponent(SHEET_NAME) + '!' + DATA_RANGE;
@@ -60,8 +64,7 @@ async function fetchData() {
             throw new Error(err?.error?.message || `HTTP ${res.status}`);
         }
         const data = await res.json();
-        const rows = data.values || [];
-        renderTable(rows);
+        processRows(data.values || []);
         setStatus('live');
         updateLastRefreshed();
     } catch (e) {
@@ -71,52 +74,66 @@ async function fetchData() {
     }
 }
 
-function renderTable(rows) {
-    const tbody = document.getElementById('skater-tbody');
+// ---- PROCESS ROWS (store full dataset) ----
+function processRows(rows) {
     const skaters = rows.filter(r => r && r[0] && r[0].trim() !== '');
 
-    if (skaters.length === 0) {
-        tbody.innerHTML = `
-            <tr class="empty-row">
-                <td colspan="6"><div class="empty-msg">— NO SKATERS ON ICE —</div></td>
-            </tr>`;
+    allSkaterData = skaters.map(row => {
+        const name       = row[0] || '—';   // Col B — Skater Name
+        const duration   = row[1] || '—';   // Col C — Duration
+        const timeOn     = row[2] || '';    // Col D — Time On
+        const timeOff    = row[3] || '';    // Col E — Time Off
+        const coach      = row[4] || '—';   // Col F — Coach
+
+        const timeOnDate  = parseTime(timeOn);
+        const timeOffDate = parseTime(timeOff);
+
+        return { name, duration, timeOn, timeOff, coach, timeOnDate, timeOffDate };
+    });
+
+    renderVisible();
+}
+
+// ---- RENDER only skaters whose time has started and not yet expired ----
+function renderVisible() {
+    const tbody = document.getElementById('skater-tbody');
+    const now   = new Date();
+
+    // Only show skaters where:
+    //   - timeOnDate exists and has been reached (timeOnDate <= now)
+    //   - timeOffDate either doesn't exist OR hasn't passed yet
+    let visible = allSkaterData.filter(s => {
+        const started = s.timeOnDate && s.timeOnDate <= now;
+        const notOver = !s.timeOffDate || s.timeOffDate > now;
+        return started && notOver;
+    });
+
+    if (visible.length === 0) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="6"><div class="empty-msg">No skaters currently on ice</div></td></tr>`;
         updateStats(0, 0);
         return;
     }
 
-    const now = new Date();
-
-    // Google Sheets returns each row as a plain array: [B, C, D, E, F]
-    let skaterData = skaters.map(row => {
-        const name     = row[0] || '—';   // Col B — Skater's Name
-        const duration = row[1] || '—';   // Col C — Duration
-        const timeOn   = row[2] || '';    // Col D — Time On
-        const timeOff  = row[3] || '';    // Col E — Time Off
-        const coach    = row[4] || '—';   // Col F — Coach's Name
-
-        const timeOffDate  = parseTime(timeOff);
-        const remainingMs  = timeOffDate ? (timeOffDate - now) : null;
-        const remainingMin = remainingMs !== null ? remainingMs / 60000 : null;
-
-        return { name, duration, timeOn, timeOff, coach, timeOffDate, remainingMin };
-    });
-
-    skaterData.sort((a, b) => {
+    // Sort by soonest time off
+    visible.sort((a, b) => {
         if (a.timeOffDate && b.timeOffDate) return a.timeOffDate - b.timeOffDate;
         if (a.timeOffDate) return -1;
         if (b.timeOffDate) return  1;
         return 0;
     });
 
-    const urgentCount = skaterData.filter(s =>
-        s.remainingMin !== null && s.remainingMin >= 0 && s.remainingMin <= URGENT_MINUTES
-    ).length;
-    updateStats(skaterData.length, urgentCount);
+    const urgentCount = visible.filter(s => {
+        if (!s.timeOffDate) return false;
+        const min = (s.timeOffDate - now) / 60000;
+        return min <= WARN_MINUTES;
+    }).length;
+    updateStats(visible.length, urgentCount);
 
-    tbody.innerHTML = skaterData.map((s, i) => {
-        const { urgencyClass, rowClass, label } = getUrgency(s.remainingMin);
+    tbody.innerHTML = visible.map((s, i) => {
+        const remainingMin = s.timeOffDate ? (s.timeOffDate - now) / 60000 : null;
+        const { urgencyClass, rowClass, label } = getUrgency(remainingMin);
         return `
-        <tr class="${rowClass}" style="animation-delay:${i * 0.05}s">
+        <tr class="${rowClass}" style="animation-delay:${i * 0.05}s" data-timeout="${s.timeOffDate ? s.timeOffDate.getTime() : ''}" data-timeon="${s.timeOnDate ? s.timeOnDate.getTime() : ''}">
             <td class="td-name">${escHtml(s.name)}</td>
             <td class="td-coach">${escHtml(s.coach)}</td>
             <td class="td-duration">${escHtml(s.duration)}</td>
@@ -129,76 +146,110 @@ function renderTable(rows) {
     startCountdownTick();
 }
 
-let tickInterval = null;
+// ---- LIVE TICK (every second) ----
 function startCountdownTick() {
     clearInterval(tickInterval);
     tickInterval = setInterval(updateCountdowns, 1000);
 }
 
 function updateCountdowns() {
-    const now = new Date();
-    const cells = document.querySelectorAll('.td-remaining[data-timeout]');
-    cells.forEach(cell => {
-        const ts = parseInt(cell.dataset.timeout);
+    const now  = new Date();
+
+    // Check if any waiting skater has just become active — re-render if so
+    const anyNewlyActive = allSkaterData.some(s => {
+        const started = s.timeOnDate && s.timeOnDate <= now;
+        const notOver = !s.timeOffDate || s.timeOffDate > now;
+        const inTable = document.querySelector(`#skater-tbody tr[data-timeon="${s.timeOnDate ? s.timeOnDate.getTime() : ''}"]`);
+        return started && notOver && !inTable;
+    });
+    if (anyNewlyActive) {
+        renderVisible();
+        return;
+    }
+
+    const rows = document.querySelectorAll('#skater-tbody tr[data-timeout]');
+    let urgentCount = 0;
+    let toRemove = [];
+
+    rows.forEach(row => {
+        const ts = parseInt(row.dataset.timeout);
         if (!ts) return;
         const remainingMin = (ts - now.getTime()) / 60000;
+
+        if (remainingMin <= 0) {
+            toRemove.push(row);
+            return;
+        }
+
         const { urgencyClass, rowClass, label } = getUrgency(remainingMin);
-        cell.textContent = label;
-        cell.className = `td-remaining ${urgencyClass}`;
-        const row = cell.closest('tr');
-        if (row) row.className = rowClass;
+
+        const cell = row.querySelector('.td-remaining');
+        if (cell) {
+            cell.textContent = label;
+            cell.className = `td-remaining ${urgencyClass}`;
+        }
+        row.className = rowClass;
+
+        if (remainingMin <= WARN_MINUTES) urgentCount++;
     });
 
-    const urgentCount = Array.from(cells).filter(c => {
-        const ts = parseInt(c.dataset.timeout);
-        if (!ts) return false;
-        const m = (ts - now.getTime()) / 60000;
-        return m >= 0 && m <= URGENT_MINUTES;
-    }).length;
-    const el = document.getElementById('stat-urgent');
-    if (el) el.textContent = urgentCount;
+    // Fade out expired rows
+    toRemove.forEach(row => {
+        row.style.transition = 'opacity 0.7s';
+        row.style.opacity = '0';
+        setTimeout(() => row.remove(), 700);
+    });
+
+    const remaining = rows.length - toRemove.length;
+    const totalEl  = document.getElementById('stat-total');
+    const urgentEl = document.getElementById('stat-urgent');
+    if (totalEl)  totalEl.textContent  = Math.max(0, remaining);
+    if (urgentEl) urgentEl.textContent = urgentCount;
 }
 
+// ---- URGENCY ----
 function getUrgency(remainingMin) {
-    if (remainingMin === null) return { urgencyClass: '', rowClass: '', label: '—' };
-    if (remainingMin < 0)      return { urgencyClass: 'expired', rowClass: '', label: 'TIME EXPIRED' };
+    if (remainingMin === null) return { urgencyClass: '',        rowClass: '',            label: '—' };
+    if (remainingMin <= 0)     return { urgencyClass: 'expired', rowClass: '',            label: 'TIME EXPIRED' };
     const label = formatCountdown(remainingMin);
     if (remainingMin <= URGENT_MINUTES) return { urgencyClass: 'urgent',  rowClass: 'row-urgent',  label };
     if (remainingMin <= WARN_MINUTES)   return { urgencyClass: 'warning', rowClass: 'row-warning', label };
     return { urgencyClass: 'ok', rowClass: '', label };
 }
 
+// ---- TIME PARSING ----
 function parseTime(str) {
     if (!str || str.trim() === '') return null;
     str = str.trim();
     const now = new Date();
 
-    const match12 = str.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-    if (match12) {
-        let h = parseInt(match12[1]);
-        const m = parseInt(match12[2]);
-        const ampm = match12[3].toUpperCase();
-        if (ampm === 'PM' && h !== 12) h += 12;
-        if (ampm === 'AM' && h === 12) h = 0;
+    const m12 = str.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (m12) {
+        let h = parseInt(m12[1]);
+        const m = parseInt(m12[2]);
+        const ap = m12[3].toUpperCase();
+        if (ap === 'PM' && h !== 12) h += 12;
+        if (ap === 'AM' && h === 12) h = 0;
         return new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0, 0);
     }
 
-    const match24 = str.match(/^(\d{1,2}):(\d{2})$/);
-    if (match24) {
+    const m24 = str.match(/^(\d{1,2}):(\d{2})$/);
+    if (m24) {
         return new Date(now.getFullYear(), now.getMonth(), now.getDate(),
-            parseInt(match24[1]), parseInt(match24[2]), 0, 0);
+            parseInt(m24[1]), parseInt(m24[2]), 0, 0);
     }
 
     return null;
 }
 
+// ---- FORMATTING ----
 function formatTime12(date) {
     let h = date.getHours();
-    const m    = String(date.getMinutes()).padStart(2, '0');
-    const s    = String(date.getSeconds()).padStart(2, '0');
-    const ampm = h >= 12 ? 'PM' : 'AM';
+    const m  = String(date.getMinutes()).padStart(2, '0');
+    const s  = String(date.getSeconds()).padStart(2, '0');
+    const ap = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12;
-    return `${h}:${m}:${s} ${ampm}`;
+    return `${h}:${m}:${s} ${ap}`;
 }
 
 function formatTimeStr(str) {
@@ -212,25 +263,25 @@ function formatCountdown(minutes) {
     return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
+// ---- STATUS ----
 function setStatus(state) {
     const dot  = document.getElementById('status-dot');
     const text = document.getElementById('status-text');
     if (!dot || !text) return;
     dot.className = 'status-dot';
-    if (state === 'live')       { dot.classList.add('live');  text.textContent = 'LIVE'; }
-    else if (state === 'error') { dot.classList.add('error'); text.textContent = 'ERROR'; }
-    else                        { text.textContent = 'CONNECTING...'; }
+    if (state === 'live')       { dot.classList.add('live');  text.textContent = 'Live'; }
+    else if (state === 'error') { dot.classList.add('error'); text.textContent = 'Error'; }
+    else                        { text.textContent = 'Connecting...'; }
 }
 
 function showError(msg) {
     const tbody = document.getElementById('skater-tbody');
     if (tbody) tbody.innerHTML = `
-        <tr class="empty-row">
-            <td colspan="6">
-                <div class="empty-msg">⚠ ERROR LOADING DATA<br>
-                <span style="font-size:0.65rem;opacity:0.6;">${escHtml(msg)}</span></div>
-            </td>
-        </tr>`;
+        <tr class="empty-row"><td colspan="6">
+            <div class="empty-msg">Could not load data<br>
+            <span style="font-size:0.78rem;font-weight:400;opacity:0.6;">${escHtml(msg)}</span>
+            </div>
+        </td></tr>`;
 }
 
 function updateStats(total, urgent) {
@@ -242,13 +293,11 @@ function updateStats(total, urgent) {
 
 function updateLastRefreshed() {
     const el = document.getElementById('last-updated');
-    if (el) el.textContent = `LAST UPDATED: ${formatTime12(new Date())}`;
+    if (el) el.textContent = `Last updated: ${formatTime12(new Date())}`;
 }
 
 function escHtml(str) {
     return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }

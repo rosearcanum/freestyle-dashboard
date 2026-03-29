@@ -6,11 +6,10 @@
     <title>Ice Arena Freestyle Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="scanline"></div>
     <div class="container">
         <header>
             <div class="header-left">
@@ -23,37 +22,37 @@
                     </svg>
                 </div>
                 <div class="title-block">
-                    <h1>FREESTYLE<span class="accent">SESSION</span></h1>
-                    <p class="subtitle">LIVE ICE DASHBOARD</p>
+                    <h1>FREESTYLE <span class="accent">SESSION</span></h1>
+                    <p class="subtitle">Miami Ice Arena · Live Dashboard</p>
                 </div>
             </div>
             <div class="header-right">
                 <div class="clock-block">
-                    <div class="clock-label">CURRENT TIME</div>
+                    <div class="clock-label">Current Time</div>
                     <div id="live-clock" class="live-clock">--:-- --</div>
                 </div>
                 <div class="status-block">
                     <div id="status-dot" class="status-dot"></div>
-                    <span id="status-text" class="status-text">CONNECTING...</span>
+                    <span id="status-text" class="status-text">Connecting...</span>
                 </div>
-                <button id="refresh-btn" onclick="fetchData()">↻ REFRESH</button>
+                <button id="refresh-btn" onclick="fetchData()">↻ Refresh</button>
             </div>
         </header>
 
         <div class="stats-bar">
             <div class="stat">
                 <span class="stat-value" id="stat-total">0</span>
-                <span class="stat-label">ON ICE</span>
+                <span class="stat-label">On Ice</span>
             </div>
             <div class="stat-divider"></div>
             <div class="stat">
                 <span class="stat-value urgent" id="stat-urgent">0</span>
-                <span class="stat-label">LEAVING SOON</span>
+                <span class="stat-label">Leaving Soon</span>
             </div>
             <div class="stat-divider"></div>
             <div class="stat">
                 <span class="stat-value" id="stat-refresh">--</span>
-                <span class="stat-label">NEXT REFRESH</span>
+                <span class="stat-label">Next Refresh</span>
             </div>
         </div>
 
@@ -61,12 +60,12 @@
             <table id="skater-table">
                 <thead>
                     <tr>
-                        <th class="col-name">SKATER NAME</th>
-                        <th class="col-coach">COACH</th>
-                        <th class="col-duration">DURATION</th>
-                        <th class="col-timein">TIME ON</th>
-                        <th class="col-timeout">TIME OFF</th>
-                        <th class="col-remaining">TIME REMAINING</th>
+                        <th class="col-name">Skater Name</th>
+                        <th class="col-coach">Coach</th>
+                        <th class="col-duration">Duration</th>
+                        <th class="col-timein">Time On</th>
+                        <th class="col-timeout">Time Off</th>
+                        <th class="col-remaining">Time Remaining</th>
                     </tr>
                 </thead>
                 <tbody id="skater-tbody">
@@ -74,7 +73,7 @@
                         <td colspan="6">
                             <div class="loading-indicator">
                                 <div class="loader-ring"></div>
-                                <span>LOADING SESSION DATA...</span>
+                                <span>Loading session data...</span>
                             </div>
                         </td>
                     </tr>
@@ -83,11 +82,11 @@
         </div>
 
         <footer>
-            <span>SHEET SYNC EVERY 60s</span>
+            <span>Auto-syncs every 60s</span>
             <span class="footer-sep">|</span>
-            <span id="last-updated">LAST UPDATED: --</span>
+            <span id="last-updated">Last updated: --</span>
             <span class="footer-sep">|</span>
-            <span>JENNIFER FREESTYLE LOG</span>
+            <span>Miami Ice Arena Freestyle Log</span>
         </footer>
     </div>
 
