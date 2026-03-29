@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ice Arena Freestyle Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="scanline"></div>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <div class="rink-icon">
+                    <svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+                        <ellipse cx="30" cy="20" rx="28" ry="18" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <line x1="30" y1="2" x2="30" y2="38" stroke="currentColor" stroke-width="1" stroke-dasharray="3,2"/>
+                        <circle cx="30" cy="20" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                        <circle cx="30" cy="20" r="1.5" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="title-block">
+                    <h1>FREESTYLE<span class="accent">SESSION</span></h1>
+                    <p class="subtitle">LIVE ICE DASHBOARD</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="clock-block">
+                    <div class="clock-label">CURRENT TIME</div>
+                    <div id="live-clock" class="live-clock">--:-- --</div>
+                </div>
+                <div class="status-block">
+                    <div id="status-dot" class="status-dot"></div>
+                    <span id="status-text" class="status-text">CONNECTING...</span>
+                </div>
+                <button id="refresh-btn" onclick="fetchData()">↻ REFRESH</button>
+            </div>
+        </header>
+
+        <div class="stats-bar">
+            <div class="stat">
+                <span class="stat-value" id="stat-total">0</span>
+                <span class="stat-label">ON ICE</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat">
+                <span class="stat-value urgent" id="stat-urgent">0</span>
+                <span class="stat-label">LEAVING SOON</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat">
+                <span class="stat-value" id="stat-refresh">--</span>
+                <span class="stat-label">NEXT REFRESH</span>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="skater-table">
+                <thead>
+                    <tr>
+                        <th class="col-name">SKATER NAME</th>
+                        <th class="col-coach">COACH</th>
+                        <th class="col-duration">DURATION</th>
+                        <th class="col-timein">TIME ON</th>
+                        <th class="col-timeout">TIME OFF</th>
+                        <th class="col-remaining">TIME REMAINING</th>
+                    </tr>
+                </thead>
+                <tbody id="skater-tbody">
+                    <tr class="loading-row">
+                        <td colspan="6">
+                            <div class="loading-indicator">
+                                <div class="loader-ring"></div>
+                                <span>LOADING SESSION DATA...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <footer>
+            <span>SHEET SYNC EVERY 60s</span>
+            <span class="footer-sep">|</span>
+            <span id="last-updated">LAST UPDATED: --</span>
+            <span class="footer-sep">|</span>
+            <span>JENNIFER FREESTYLE LOG</span>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
