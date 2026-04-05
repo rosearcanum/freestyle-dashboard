@@ -4,7 +4,6 @@
 
 const API_KEY        = 'AIzaSyBypFcSsyYeFzmIMsYSGuL22MU7Mvr-npc';
 const SPREADSHEET_ID = '18kC_kfghnpjap9y5FXd79ikmzDIOdtNOgI89uWZ5uHo';
-const SHEET_NAME     = '1st';
 const DATA_RANGE     = 'B3:F100';
 const REFRESH_MS     = 60 * 1000;
 
@@ -15,7 +14,17 @@ let refreshTimer    = null;
 let countdownTimer  = null;
 let nextRefreshSecs = REFRESH_MS / 1000;
 let tickInterval    = null;
-let allSkaterData   = [];   // full dataset, filtered by time for display
+let allSkaterData   = [];
+
+// ---- GET TODAY'S SHEET TAB NAME ----
+// Returns "1st", "2nd", "3rd", "4th", etc. based on today's date
+function getTodaySheetName() {
+    const day = new Date().getDate(); // 1-31
+    const suffixes = ['th','st','nd','rd'];
+    const v = day % 100;
+    const suffix = suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0];
+    return day + suffix; // e.g. "1st", "2nd", "3rd", "4th"..."31st"
+}
 
 window.addEventListener('load', () => {
     startClock();
@@ -54,13 +63,23 @@ function startRefreshCycle() {
 // ---- FETCH ----
 async function fetchData() {
     setStatus('connecting');
-    const range = encodeURIComponent(SHEET_NAME) + '!' + DATA_RANGE;
-    const url   = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
+
+    const sheetName = getTodaySheetName();
+    const range     = encodeURIComponent(sheetName) + '!' + DATA_RANGE;
+    const url       = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
+
+    // Update footer to show which tab is being read
+    const tabEl = document.getElementById('sheet-tab');
+    if (tabEl) tabEl.textContent = `Sheet: ${sheetName}`;
 
     try {
         const res = await fetch(url);
         if (!res.ok) {
             const err = await res.json();
+            // If sheet tab doesn't exist yet, show friendly message
+            if (err?.error?.code === 400 || err?.error?.code === 404) {
+                throw new Error(`No sheet tab found for today ("${sheetName}"). Create it in Google Sheets to get started.`);
+            }
             throw new Error(err?.error?.message || `HTTP ${res.status}`);
         }
         const data = await res.json();
@@ -74,16 +93,16 @@ async function fetchData() {
     }
 }
 
-// ---- PROCESS ROWS (store full dataset) ----
+// ---- PROCESS ROWS ----
 function processRows(rows) {
     const skaters = rows.filter(r => r && r[0] && r[0].trim() !== '');
 
     allSkaterData = skaters.map(row => {
-        const name       = row[0] || '—';   // Col B — Skater Name
-        const duration   = row[1] || '—';   // Col C — Duration
-        const timeOn     = row[2] || '';    // Col D — Time On
-        const timeOff    = row[3] || '';    // Col E — Time Off
-        const coach      = row[4] || '—';   // Col F — Coach
+        const name     = row[0] || '—';
+        const duration = row[1] || '—';
+        const timeOn   = row[2] || '';
+        const timeOff  = row[3] || '';
+        const coach    = row[4] || '—';
 
         const timeOnDate  = parseTime(timeOn);
         const timeOffDate = parseTime(timeOff);
@@ -94,14 +113,11 @@ function processRows(rows) {
     renderVisible();
 }
 
-// ---- RENDER only skaters whose time has started and not yet expired ----
+// ---- RENDER ----
 function renderVisible() {
     const tbody = document.getElementById('skater-tbody');
     const now   = new Date();
 
-    // Only show skaters where:
-    //   - timeOnDate exists and has been reached (timeOnDate <= now)
-    //   - timeOffDate either doesn't exist OR hasn't passed yet
     let visible = allSkaterData.filter(s => {
         const started = s.timeOnDate && s.timeOnDate <= now;
         const notOver = !s.timeOffDate || s.timeOffDate > now;
@@ -114,7 +130,6 @@ function renderVisible() {
         return;
     }
 
-    // Sort by soonest time off
     visible.sort((a, b) => {
         if (a.timeOffDate && b.timeOffDate) return a.timeOffDate - b.timeOffDate;
         if (a.timeOffDate) return -1;
@@ -124,8 +139,7 @@ function renderVisible() {
 
     const urgentCount = visible.filter(s => {
         if (!s.timeOffDate) return false;
-        const min = (s.timeOffDate - now) / 60000;
-        return min <= WARN_MINUTES;
+        return (s.timeOffDate - now) / 60000 <= WARN_MINUTES;
     }).length;
     updateStats(visible.length, urgentCount);
 
@@ -133,39 +147,39 @@ function renderVisible() {
         const remainingMin = s.timeOffDate ? (s.timeOffDate - now) / 60000 : null;
         const { urgencyClass, rowClass, label } = getUrgency(remainingMin);
         return `
-        <tr class="${rowClass}" style="animation-delay:${i * 0.05}s" data-timeout="${s.timeOffDate ? s.timeOffDate.getTime() : ''}" data-timeon="${s.timeOnDate ? s.timeOnDate.getTime() : ''}">
+        <tr class="${rowClass}" style="animation-delay:${i * 0.05}s"
+            data-timeout="${s.timeOffDate ? s.timeOffDate.getTime() : ''}"
+            data-timeon="${s.timeOnDate ? s.timeOnDate.getTime() : ''}">
             <td class="td-name">${escHtml(s.name)}</td>
             <td class="td-coach">${escHtml(s.coach)}</td>
             <td class="td-duration">${escHtml(s.duration)}</td>
             <td class="td-time">${formatTimeStr(s.timeOn)}</td>
             <td class="td-timeout">${formatTimeStr(s.timeOff)}</td>
-            <td class="td-remaining ${urgencyClass}" data-timeout="${s.timeOffDate ? s.timeOffDate.getTime() : ''}">${label}</td>
+            <td class="td-remaining ${urgencyClass}"
+                data-timeout="${s.timeOffDate ? s.timeOffDate.getTime() : ''}">${label}</td>
         </tr>`;
     }).join('');
 
     startCountdownTick();
 }
 
-// ---- LIVE TICK (every second) ----
+// ---- LIVE TICK ----
 function startCountdownTick() {
     clearInterval(tickInterval);
     tickInterval = setInterval(updateCountdowns, 1000);
 }
 
 function updateCountdowns() {
-    const now  = new Date();
+    const now = new Date();
 
-    // Check if any waiting skater has just become active — re-render if so
+    // Check if any skater just became active
     const anyNewlyActive = allSkaterData.some(s => {
-        const started = s.timeOnDate && s.timeOnDate <= now;
-        const notOver = !s.timeOffDate || s.timeOffDate > now;
-        const inTable = document.querySelector(`#skater-tbody tr[data-timeon="${s.timeOnDate ? s.timeOnDate.getTime() : ''}"]`);
+        const started  = s.timeOnDate && s.timeOnDate <= now;
+        const notOver  = !s.timeOffDate || s.timeOffDate > now;
+        const inTable  = document.querySelector(`#skater-tbody tr[data-timeon="${s.timeOnDate ? s.timeOnDate.getTime() : ''}"]`);
         return started && notOver && !inTable;
     });
-    if (anyNewlyActive) {
-        renderVisible();
-        return;
-    }
+    if (anyNewlyActive) { renderVisible(); return; }
 
     const rows = document.querySelectorAll('#skater-tbody tr[data-timeout]');
     let urgentCount = 0;
@@ -176,24 +190,15 @@ function updateCountdowns() {
         if (!ts) return;
         const remainingMin = (ts - now.getTime()) / 60000;
 
-        if (remainingMin <= 0) {
-            toRemove.push(row);
-            return;
-        }
+        if (remainingMin <= 0) { toRemove.push(row); return; }
 
         const { urgencyClass, rowClass, label } = getUrgency(remainingMin);
-
         const cell = row.querySelector('.td-remaining');
-        if (cell) {
-            cell.textContent = label;
-            cell.className = `td-remaining ${urgencyClass}`;
-        }
+        if (cell) { cell.textContent = label; cell.className = `td-remaining ${urgencyClass}`; }
         row.className = rowClass;
-
         if (remainingMin <= WARN_MINUTES) urgentCount++;
     });
 
-    // Fade out expired rows
     toRemove.forEach(row => {
         row.style.transition = 'opacity 0.7s';
         row.style.opacity = '0';
@@ -278,9 +283,7 @@ function showError(msg) {
     const tbody = document.getElementById('skater-tbody');
     if (tbody) tbody.innerHTML = `
         <tr class="empty-row"><td colspan="6">
-            <div class="empty-msg">Could not load data<br>
-            <span style="font-size:0.78rem;font-weight:400;opacity:0.6;">${escHtml(msg)}</span>
-            </div>
+            <div class="empty-msg">${escHtml(msg)}</div>
         </td></tr>`;
 }
 
