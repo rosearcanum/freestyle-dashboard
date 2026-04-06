@@ -17,13 +17,39 @@ let tickInterval    = null;
 let allSkaterData   = [];
 
 // ---- GET TODAY'S SHEET TAB NAME ----
-// Returns "1st", "2nd", "3rd", "4th", etc. based on today's date
 function getTodaySheetName() {
-    const day = new Date().getDate(); // 1-31
-    const suffixes = ['th','st','nd','rd'];
-    const v = day % 100;
-    const suffix = suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0];
-    return day + suffix; // e.g. "1st", "2nd", "3rd", "4th"..."31st"
+    const day = new Date().getDate();
+    if (day === 1)  return '1st';
+    if (day === 2)  return '2nd';
+    if (day === 3)  return '3rd';
+    if (day === 4)  return '4th';
+    if (day === 5)  return '5th';
+    if (day === 6)  return '6th';
+    if (day === 7)  return '7th';
+    if (day === 8)  return '8th';
+    if (day === 9)  return '9th';
+    if (day === 10) return '10th';
+    if (day === 11) return '11th';
+    if (day === 12) return '12th';
+    if (day === 13) return '13th';
+    if (day === 14) return '14th';
+    if (day === 15) return '15th';
+    if (day === 16) return '16th';
+    if (day === 17) return '17th';
+    if (day === 18) return '18th';
+    if (day === 19) return '19th';
+    if (day === 20) return '20th';
+    if (day === 21) return '21st';
+    if (day === 22) return '22nd';
+    if (day === 23) return '23rd';
+    if (day === 24) return '24th';
+    if (day === 25) return '25th';
+    if (day === 26) return '26th';
+    if (day === 27) return '27th';
+    if (day === 28) return '28th';
+    if (day === 29) return '29th';
+    if (day === 30) return '30th';
+    if (day === 31) return '31st';
 }
 
 window.addEventListener('load', () => {
