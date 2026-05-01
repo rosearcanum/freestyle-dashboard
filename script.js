@@ -8,13 +8,51 @@ const DATA_RANGE       = 'B3:F100';
 const REFRESH_MS       = 60 * 1000;
 const WARN_MINUTES     = 10;
 const URGENT_MINUTES   = 5;
-const ZAMBONI_DURATION = 10; // minutes the ice is cleaned
+const ZAMBONI_DURATION = 10;
 
 let refreshTimer    = null;
 let countdownTimer  = null;
 let nextRefreshSecs = REFRESH_MS / 1000;
 let tickInterval    = null;
 let allSkaterData   = [];
+let zamboniTimes    = [];
+
+// ---- MOBILE SIDEBAR TOGGLE ----
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn     = document.getElementById('sidebar-toggle');
+    sidebar.classList.toggle('open');
+    btn.textContent = sidebar.classList.contains('open') ? '✕ Close' : '🚧 Zamboni';
+}
+
+// Close sidebar when clicking outside on mobile
+document.addEventListener('click', (e) => {
+    const sidebar = document.getElementById('sidebar');
+    const btn     = document.getElementById('sidebar-toggle');
+    if (sidebar && btn && sidebar.classList.contains('open')) {
+        if (!sidebar.contains(e.target) && e.target !== btn) {
+            sidebar.classList.remove('open');
+            btn.textContent = '🚧 Zamboni';
+        }
+    }
+});
+
+// ---- MIDNIGHT RESET ----
+// Clears zamboni log automatically at midnight so yesterday's data doesn't carry over
+function scheduleMidnightReset() {
+    const now       = new Date();
+    const midnight  = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+    const msUntilMidnight = midnight - now;
+
+    setTimeout(() => {
+        zamboniTimes = [];
+        renderZamboniList();
+        renderVisible();
+        fetchData(); // also refresh sheet data for new day
+        scheduleMidnightReset(); // schedule next midnight
+    }, msUntilMidnight);
+}
+
 let zamboniTimes    = []; // array of Date objects for each zamboni start
 
 // ---- TODAY'S SHEET TAB ----
@@ -150,6 +188,7 @@ window.addEventListener('load', () => {
     fetchData();
     startRefreshCycle();
     renderZamboniList();
+    scheduleMidnightReset();
 });
 
 // ---- CLOCK ----
