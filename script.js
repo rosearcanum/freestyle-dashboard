@@ -2,21 +2,22 @@
 //  ICE ARENA FREESTYLE DASHBOARD — script.js
 // =============================================
 
-const API_KEY        = 'AIzaSyBypFcSsyYeFzmIMsYSGuL22MU7Mvr-npc';
-const SPREADSHEET_ID = '18kC_kfghnpjap9y5FXd79ikmzDIOdtNOgI89uWZ5uHo';
-const DATA_RANGE     = 'B3:F100';
-const REFRESH_MS     = 60 * 1000;
-
-const WARN_MINUTES   = 10;
-const URGENT_MINUTES = 5;
+const API_KEY          = 'AIzaSyBypFcSsyYeFzmIMsYSGuL22MU7Mvr-npc';
+const SPREADSHEET_ID   = '18kC_kfghnpjap9y5FXd79ikmzDIOdtNOgI89uWZ5uHo';
+const DATA_RANGE       = 'B3:F100';
+const REFRESH_MS       = 60 * 1000;
+const WARN_MINUTES     = 10;
+const URGENT_MINUTES   = 5;
+const ZAMBONI_DURATION = 10; // minutes the ice is cleaned
 
 let refreshTimer    = null;
 let countdownTimer  = null;
 let nextRefreshSecs = REFRESH_MS / 1000;
 let tickInterval    = null;
 let allSkaterData   = [];
+let zamboniTimes    = []; // array of Date objects for each zamboni start
 
-// ---- GET TODAY'S SHEET TAB NAME ----
+// ---- TODAY'S SHEET TAB ----
 function getTodaySheetName() {
     const day = new Date().getDate();
     if (day === 1)  return '1st';
@@ -52,10 +53,103 @@ function getTodaySheetName() {
     if (day === 31) return '31st';
 }
 
+// ---- ZAMBONI LOGIC ----
+
+// Returns how many extra minutes to add to a skater based on zamboni overlaps
+function getZamboniBonus(timeOnDate, timeOffDate) {
+    if (!timeOnDate || !timeOffDate) return 0;
+    let bonus = 0;
+    zamboniTimes.forEach(zStart => {
+        const zEnd = new Date(zStart.getTime() + ZAMBONI_DURATION * 60000);
+        // Overlap if zamboni starts before skater's session ends
+        // and zamboni ends after skater's session starts
+        const overlaps = zStart < timeOffDate && zEnd > timeOnDate;
+        if (overlaps) bonus += ZAMBONI_DURATION;
+    });
+    return bonus;
+}
+
+// Add a zamboni time from the input field
+function addZamboni() {
+    const input = document.getElementById('zamboni-input');
+    const errorEl = document.getElementById('zamboni-error');
+    const raw = input.value.trim();
+    errorEl.textContent = '';
+
+    const parsed = parseTime(raw);
+    if (!parsed) {
+        errorEl.textContent = 'Invalid time. Try "3:00 PM" or "15:00"';
+        return;
+    }
+
+    // Check for duplicate
+    const isDuplicate = zamboniTimes.some(z => z.getTime() === parsed.getTime());
+    if (isDuplicate) {
+        errorEl.textContent = 'That time is already logged.';
+        return;
+    }
+
+    zamboniTimes.push(parsed);
+    zamboniTimes.sort((a, b) => a - b);
+    input.value = '';
+    renderZamboniList();
+    renderVisible(); // re-render table with updated bonuses
+}
+
+// Allow pressing Enter to add
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('zamboni-input');
+    if (input) {
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter') addZamboni();
+        });
+    }
+});
+
+function removeZamboni(index) {
+    zamboniTimes.splice(index, 1);
+    renderZamboniList();
+    renderVisible();
+}
+
+function clearAllZamboni() {
+    zamboniTimes = [];
+    renderZamboniList();
+    renderVisible();
+}
+
+function renderZamboniList() {
+    const list = document.getElementById('zamboni-list');
+    const countEl = document.getElementById('zamboni-count');
+    if (countEl) countEl.textContent = zamboniTimes.length;
+
+    if (zamboniTimes.length === 0) {
+        list.innerHTML = `<li class="zamboni-empty">No cleanings logged yet.</li>`;
+        return;
+    }
+
+    list.innerHTML = zamboniTimes.map((z, i) => {
+        const zEnd = new Date(z.getTime() + ZAMBONI_DURATION * 60000);
+        return `
+        <li class="zamboni-item">
+            <div class="zamboni-item-left">
+                <span class="zamboni-item-icon">🚧</span>
+                <div>
+                    <div class="zamboni-time">${formatTimeStr12(z)}</div>
+                    <div class="zamboni-window">until ${formatTimeStr12(zEnd)}</div>
+                </div>
+            </div>
+            <button class="zamboni-remove" onclick="removeZamboni(${i})" title="Remove">✕</button>
+        </li>`;
+    }).join('');
+}
+
+// ---- INIT ----
 window.addEventListener('load', () => {
     startClock();
     fetchData();
     startRefreshCycle();
+    renderZamboniList();
 });
 
 // ---- CLOCK ----
@@ -89,12 +183,10 @@ function startRefreshCycle() {
 // ---- FETCH ----
 async function fetchData() {
     setStatus('connecting');
-
     const sheetName = getTodaySheetName();
     const range     = encodeURIComponent(sheetName) + '!' + DATA_RANGE;
     const url       = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
 
-    // Update footer to show which tab is being read
     const tabEl = document.getElementById('sheet-tab');
     if (tabEl) tabEl.textContent = `Sheet: ${sheetName}`;
 
@@ -102,7 +194,6 @@ async function fetchData() {
         const res = await fetch(url);
         if (!res.ok) {
             const err = await res.json();
-            // If sheet tab doesn't exist yet, show friendly message
             if (err?.error?.code === 400 || err?.error?.code === 404) {
                 throw new Error(`No sheet tab found for today ("${sheetName}"). Create it in Google Sheets to get started.`);
             }
@@ -122,20 +213,16 @@ async function fetchData() {
 // ---- PROCESS ROWS ----
 function processRows(rows) {
     const skaters = rows.filter(r => r && r[0] && r[0].trim() !== '');
-
     allSkaterData = skaters.map(row => {
         const name     = row[0] || '—';
         const duration = row[1] || '—';
         const timeOn   = row[2] || '';
         const timeOff  = row[3] || '';
         const coach    = row[4] || '—';
-
         const timeOnDate  = parseTime(timeOn);
         const timeOffDate = parseTime(timeOff);
-
         return { name, duration, timeOn, timeOff, coach, timeOnDate, timeOffDate };
     });
-
     renderVisible();
 }
 
@@ -153,36 +240,57 @@ function renderVisible() {
     if (visible.length === 0) {
         tbody.innerHTML = `<tr class="empty-row"><td colspan="6"><div class="empty-msg">No skaters currently on ice</div></td></tr>`;
         updateStats(0, 0);
+        updateAffectedCount(0);
         return;
     }
 
+    // Apply zamboni bonus to each skater's effective time off
+    visible = visible.map(s => {
+        const bonus = getZamboniBonus(s.timeOnDate, s.timeOffDate);
+        const effectiveTimeOff = s.timeOffDate
+            ? new Date(s.timeOffDate.getTime() + bonus * 60000)
+            : null;
+        return { ...s, bonus, effectiveTimeOff };
+    });
+
+    // Sort by soonest effective time off
     visible.sort((a, b) => {
-        if (a.timeOffDate && b.timeOffDate) return a.timeOffDate - b.timeOffDate;
-        if (a.timeOffDate) return -1;
-        if (b.timeOffDate) return  1;
+        if (a.effectiveTimeOff && b.effectiveTimeOff) return a.effectiveTimeOff - b.effectiveTimeOff;
+        if (a.effectiveTimeOff) return -1;
+        if (b.effectiveTimeOff) return  1;
         return 0;
     });
 
-    const urgentCount = visible.filter(s => {
-        if (!s.timeOffDate) return false;
-        return (s.timeOffDate - now) / 60000 <= WARN_MINUTES;
+    const urgentCount   = visible.filter(s => {
+        if (!s.effectiveTimeOff) return false;
+        return (s.effectiveTimeOff - now) / 60000 <= WARN_MINUTES;
     }).length;
+    const affectedCount = visible.filter(s => s.bonus > 0).length;
+
     updateStats(visible.length, urgentCount);
+    updateAffectedCount(affectedCount);
 
     tbody.innerHTML = visible.map((s, i) => {
-        const remainingMin = s.timeOffDate ? (s.timeOffDate - now) / 60000 : null;
+        const remainingMin = s.effectiveTimeOff ? (s.effectiveTimeOff - now) / 60000 : null;
         const { urgencyClass, rowClass, label } = getUrgency(remainingMin);
+        const badge = s.bonus > 0
+            ? `<span class="zamboni-badge">+${s.bonus}m 🚧</span>`
+            : '';
+        const timeOffDisplay = s.effectiveTimeOff
+            ? formatTimeStr12(s.effectiveTimeOff)
+            : formatTimeStr(s.timeOff);
+
         return `
         <tr class="${rowClass}" style="animation-delay:${i * 0.05}s"
-            data-timeout="${s.timeOffDate ? s.timeOffDate.getTime() : ''}"
+            data-timeout="${s.effectiveTimeOff ? s.effectiveTimeOff.getTime() : ''}"
             data-timeon="${s.timeOnDate ? s.timeOnDate.getTime() : ''}">
-            <td class="td-name">${escHtml(s.name)}</td>
+            <td class="td-name">${escHtml(s.name)}${badge}</td>
             <td class="td-coach">${escHtml(s.coach)}</td>
             <td class="td-duration">${escHtml(s.duration)}</td>
             <td class="td-time">${formatTimeStr(s.timeOn)}</td>
-            <td class="td-timeout">${formatTimeStr(s.timeOff)}</td>
+            <td class="td-timeout">${timeOffDisplay}</td>
             <td class="td-remaining ${urgencyClass}"
-                data-timeout="${s.timeOffDate ? s.timeOffDate.getTime() : ''}">${label}</td>
+                data-timeout="${s.effectiveTimeOff ? s.effectiveTimeOff.getTime() : ''}">${label}</td>
         </tr>`;
     }).join('');
 
@@ -198,11 +306,10 @@ function startCountdownTick() {
 function updateCountdowns() {
     const now = new Date();
 
-    // Check if any skater just became active
     const anyNewlyActive = allSkaterData.some(s => {
-        const started  = s.timeOnDate && s.timeOnDate <= now;
-        const notOver  = !s.timeOffDate || s.timeOffDate > now;
-        const inTable  = document.querySelector(`#skater-tbody tr[data-timeon="${s.timeOnDate ? s.timeOnDate.getTime() : ''}"]`);
+        const started = s.timeOnDate && s.timeOnDate <= now;
+        const notOver = !s.timeOffDate || s.timeOffDate > now;
+        const inTable = document.querySelector(`#skater-tbody tr[data-timeon="${s.timeOnDate ? s.timeOnDate.getTime() : ''}"]`);
         return started && notOver && !inTable;
     });
     if (anyNewlyActive) { renderVisible(); return; }
@@ -240,8 +347,8 @@ function updateCountdowns() {
 
 // ---- URGENCY ----
 function getUrgency(remainingMin) {
-    if (remainingMin === null) return { urgencyClass: '',        rowClass: '',            label: '—' };
-    if (remainingMin <= 0)     return { urgencyClass: 'expired', rowClass: '',            label: 'TIME EXPIRED' };
+    if (remainingMin === null) return { urgencyClass: '',        rowClass: '',           label: '—' };
+    if (remainingMin <= 0)     return { urgencyClass: 'expired', rowClass: '',           label: 'TIME EXPIRED' };
     const label = formatCountdown(remainingMin);
     if (remainingMin <= URGENT_MINUTES) return { urgencyClass: 'urgent',  rowClass: 'row-urgent',  label };
     if (remainingMin <= WARN_MINUTES)   return { urgencyClass: 'warning', rowClass: 'row-warning', label };
@@ -269,7 +376,6 @@ function parseTime(str) {
         return new Date(now.getFullYear(), now.getMonth(), now.getDate(),
             parseInt(m24[1]), parseInt(m24[2]), 0, 0);
     }
-
     return null;
 }
 
@@ -281,6 +387,14 @@ function formatTime12(date) {
     const ap = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12;
     return `${h}:${m}:${s} ${ap}`;
+}
+
+function formatTimeStr12(date) {
+    let h = date.getHours();
+    const m  = String(date.getMinutes()).padStart(2, '0');
+    const ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h}:${m} ${ap}`;
 }
 
 function formatTimeStr(str) {
@@ -318,6 +432,11 @@ function updateStats(total, urgent) {
     const u = document.getElementById('stat-urgent');
     if (t) t.textContent = total;
     if (u) u.textContent = urgent;
+}
+
+function updateAffectedCount(count) {
+    const el = document.getElementById('zamboni-affected');
+    if (el) el.textContent = count;
 }
 
 function updateLastRefreshed() {

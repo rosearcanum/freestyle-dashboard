@@ -310,3 +310,218 @@ footer {
 @media (max-width: 520px) {
     .col-timein { display: none; }
 }
+
+/* =============================================
+   ZAMBONI SIDEBAR
+   ============================================= */
+
+body { padding: 0; }
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+    gap: 0;
+}
+
+.sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    background: var(--white);
+    border-right: 1px solid var(--border2);
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 2px 0 16px rgba(13,45,74,0.07);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1.5px solid var(--border2);
+}
+.zamboni-icon { font-size: 1.4rem; }
+.sidebar-header h2 {
+    font-family: var(--font-serif);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--navy);
+}
+
+.sidebar-desc {
+    font-size: 0.78rem;
+    color: var(--slate);
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+.zamboni-input-row {
+    display: flex;
+    gap: 8px;
+}
+.zamboni-input {
+    flex: 1;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--navy);
+    background: var(--ice);
+    border: 1.5px solid var(--border2);
+    border-radius: 8px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.zamboni-input:focus { border-color: var(--navy3); }
+.zamboni-input::placeholder { color: var(--muted); font-weight: 400; }
+
+#zamboni-add-btn {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--white);
+    background: var(--navy2);
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    cursor: pointer;
+    transition: background 0.18s;
+    white-space: nowrap;
+}
+#zamboni-add-btn:hover { background: var(--navy); }
+
+.zamboni-error {
+    font-size: 0.75rem;
+    color: var(--urgent);
+    font-weight: 500;
+    min-height: 16px;
+}
+
+.zamboni-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.zamboni-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--ice2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    animation: rowIn 0.25s ease both;
+}
+.zamboni-item-left { display: flex; align-items: center; gap: 8px; }
+.zamboni-item-icon { font-size: 1rem; }
+.zamboni-time {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--navy);
+    font-variant-numeric: tabular-nums;
+}
+.zamboni-window {
+    font-size: 0.68rem;
+    color: var(--slate);
+    font-weight: 400;
+    margin-top: 1px;
+}
+.zamboni-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s;
+    line-height: 1;
+}
+.zamboni-remove:hover { color: var(--urgent); }
+
+.clear-btn {
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--slate);
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+}
+.clear-btn:hover { color: var(--urgent); border-color: var(--urgent); }
+
+.sidebar-footer {
+    border-top: 1.5px solid var(--border);
+    padding-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.sidebar-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--slate);
+    font-weight: 400;
+}
+.sidebar-stat span:first-child {
+    font-family: var(--font-sans);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--navy2);
+    min-width: 24px;
+}
+
+/* Zamboni-adjusted row indicator */
+.zamboni-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    background: #fffbeb;
+    color: var(--warn);
+    border: 1px solid #fde68a;
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 8px;
+    font-weight: 600;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.main {
+    flex: 1;
+    padding: 36px 28px 64px;
+    min-width: 0;
+}
+
+/* Responsive — stack on small screens */
+@media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        border-right: none;
+        border-bottom: 1px solid var(--border2);
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding: 16px;
+        gap: 12px;
+    }
+    .sidebar-header { width: 100%; }
+    .main { padding: 20px 16px 40px; }
+}
