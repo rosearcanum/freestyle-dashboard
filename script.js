@@ -53,8 +53,6 @@ function scheduleMidnightReset() {
     }, msUntilMidnight);
 }
 
-let zamboniTimes    = []; // array of Date objects for each zamboni start
-
 // ---- TODAY'S SHEET TAB ----
 function getTodaySheetName() {
     const day = new Date().getDate();
