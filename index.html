@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miami Ice Arena Freestyle Dashboard</title>
+    <title>Ice Arena Freestyle Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div class="layout">
 
         <!-- ---- SIDEBAR ---- -->
@@ -132,6 +133,14 @@
     </div>
 
     <div id="toast-container"></div>
+    <!-- SCROLLING TICKER -->
+    <div class="ticker-wrap">
+        <div class="ticker-label">❄️ Live</div>
+        <div class="ticker-track">
+            <div class="ticker-item">Check out your freestyle session time on your phone at <span>miamiicefreestyle.live</span> &nbsp;·&nbsp; Check out your freestyle session time on your phone at <span>miamiicefreestyle.live</span> &nbsp;·&nbsp; Check out your freestyle session time on your phone at <span>miamiicefreestyle.live</span> &nbsp;·&nbsp; Check out your freestyle session time on your phone at <span>miamiicefreestyle.live</span> &nbsp;·&nbsp;</div>
+            <div class="ticker-item">Check out your freestyle session time on your phone at <span>miamiicefreestyle.live</span> &nbsp;·&nbsp; Check out your freestyle session time on your phone at <span>miamiicefreestyle.live</span> &nbsp;·&nbsp; Check out your freestyle session time on your phone at <span>miamiicefreestyle.live</span> &nbsp;·&nbsp; Check out your freestyle session time on your phone at <span>miamiicefreestyle.live</span> &nbsp;·&nbsp;</div>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>

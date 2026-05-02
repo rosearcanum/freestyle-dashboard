@@ -59,21 +59,13 @@ function showToast(message) {
 
 // ---- MOBILE SIDEBAR ----
 function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const btn     = document.getElementById('sidebar-toggle');
-    sidebar.classList.toggle('open');
-    btn.textContent = sidebar.classList.contains('open') ? '✕ Close' : '🚧 Zamboni';
+    const sidebar  = document.getElementById('sidebar');
+    const btn      = document.getElementById('sidebar-toggle');
+    const overlay  = document.getElementById('sidebar-overlay');
+    const isOpen   = sidebar.classList.toggle('open');
+    btn.textContent = isOpen ? '✕ Close' : '🚧 Zamboni Log';
+    if (overlay) overlay.classList.toggle('show', isOpen);
 }
-document.addEventListener('click', (e) => {
-    const sidebar = document.getElementById('sidebar');
-    const btn     = document.getElementById('sidebar-toggle');
-    if (sidebar && btn && sidebar.classList.contains('open')) {
-        if (!sidebar.contains(e.target) && e.target !== btn) {
-            sidebar.classList.remove('open');
-            btn.textContent = '🚧 Zamboni';
-        }
-    }
-});
 
 // ---- MIDNIGHT RESET ----
 function scheduleMidnightReset() {

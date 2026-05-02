@@ -1,3 +1,70 @@
+
+/* =============================================
+   SCROLLING TICKER
+   ============================================= */
+.ticker-wrap {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--navy);
+    color: white;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    z-index: 90;
+    box-shadow: 0 -2px 12px rgba(10,40,80,0.2);
+}
+.ticker-label {
+    background: var(--accent);
+    color: white;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0 16px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+    z-index: 1;
+}
+.ticker-track {
+    display: flex;
+    animation: ticker-scroll 22s linear infinite;
+    white-space: nowrap;
+}
+.ticker-track:hover { animation-play-state: paused; }
+.ticker-item {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0 60px;
+    color: rgba(255,255,255,0.92);
+    white-space: nowrap;
+}
+.ticker-item span {
+    color: #7dd3fc;
+    font-weight: 700;
+}
+@keyframes ticker-scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+/* Sidebar overlay for desktop */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,40,80,0.3);
+    z-index: 40;
+    backdrop-filter: blur(2px);
+}
+.sidebar-overlay.show { display: block; }
+
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
 :root {
@@ -61,13 +128,16 @@ body {
    SIDEBAR
    ============================================= */
 .sidebar {
-    width: 272px; flex-shrink: 0;
+    width: 320px; flex-shrink: 0;
     background: var(--white);
     border-right: 1px solid var(--border2);
     padding: 28px 20px;
     display: flex; flex-direction: column; gap: 14px;
     box-shadow: 2px 0 16px rgba(10,40,80,0.08);
-    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
 }
 .sidebar-header {
     display: flex; align-items: center; gap: 10px;
@@ -117,10 +187,11 @@ body {
 .sidebar-stat span:first-child { font-size: 1.1rem; font-weight: 700; color: var(--navy); min-width: 24px; }
 
 .sidebar-toggle {
-    display: none; position: fixed; bottom: 20px; right: 20px; z-index: 100;
+    display: flex; position: fixed; bottom: 60px; right: 24px; z-index: 100;
     background: var(--navy); color: white; border: none; border-radius: 50px;
     padding: 12px 22px; font-family: var(--font-sans); font-size: 0.9rem; font-weight: 700;
     cursor: pointer; box-shadow: 0 4px 18px rgba(10,40,80,0.3);
+    align-items: center; gap: 8px;
 }
 .sidebar.open { transform: translateX(0) !important; }
 
@@ -189,9 +260,9 @@ table { width: 100%; border-collapse: collapse; }
 
 thead tr { background: var(--navy); }
 thead th {
-    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em;
+    font-size: 1rem; font-weight: 700; letter-spacing: 0.16em;
     text-transform: uppercase; color: rgba(255,255,255,0.88);
-    padding: 15px 24px; text-align: left;
+    padding: 18px 24px; text-align: left;
 }
 
 tbody tr { background: var(--white); border-bottom: 1px solid var(--border); transition: background 0.15s; animation: rowIn 0.3s ease both; }
@@ -200,13 +271,13 @@ tbody tr:last-child { border-bottom: none; }
 
 @keyframes rowIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
 
-td { padding: 17px 24px; vertical-align: middle; }
-.td-name { font-family: var(--font-serif); font-size: 1.55rem; font-weight: 700; color: var(--navy); line-height: 1.2; }
-.td-coach { font-size: 1rem; color: var(--slate); }
-.td-duration { font-size: 0.92rem; color: var(--muted); font-weight: 500; }
-.td-time { font-size: 1rem; font-weight: 600; color: var(--navy2); font-variant-numeric: tabular-nums; }
-.td-timeout { font-size: 1rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.td-remaining { font-family: var(--font-sans); font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+td { padding: 22px 24px; vertical-align: middle; }
+.td-name { font-family: var(--font-serif); font-size: 3.2rem; font-weight: 700; color: var(--navy); line-height: 1.2; }
+.td-coach { font-size: 2rem; color: var(--slate); }
+.td-duration { font-size: 2rem; color: var(--muted); font-weight: 500; }
+.td-time { font-size: 2.2rem; font-weight: 600; color: var(--navy2); font-variant-numeric: tabular-nums; }
+.td-timeout { font-size: 2.2rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.td-remaining { font-family: var(--font-sans); font-size: 2.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .td-remaining.ok      { color: var(--ok); }
 .td-remaining.warning { color: var(--warn); }
 .td-remaining.urgent  { color: var(--urgent); animation: blink 1s step-start infinite; }
