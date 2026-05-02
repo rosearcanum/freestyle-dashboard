@@ -39,11 +39,12 @@ body {
 
 /* ---- CUSTOM ICONS ---- */
 .blossom-icon {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
     object-fit: contain;
-    opacity: 0.85;
+    opacity: 1;
     flex-shrink: 0;
+    filter: drop-shadow(0 1px 3px rgba(180,80,120,0.35));
 }
 .zamboni-icon {
     width: 36px;
@@ -215,10 +216,10 @@ body {
 /* =============================================
    MAIN
    ============================================= */
-.main { flex: 1; padding: 36px 28px 64px; min-width: 0; }
+.main { flex: 1; padding: 36px 28px 64px; min-width: 0; background: white; }
 
 header {
-    background: var(--white);
+    background: #ffffff;
     border: 1px solid var(--border2);
     border-top: 4px solid var(--bloom);
     border-radius: 20px 20px 0 0;
@@ -266,7 +267,7 @@ header {
 #refresh-btn:active { transform: scale(0.97); }
 
 .stats-bar {
-    background: var(--white);
+    background: #ffffff;
     border: 1px solid var(--border); border-top: none;
     padding: 14px 32px; display: flex; align-items: center; margin-bottom: 1px;
 }
@@ -278,7 +279,7 @@ header {
 .stat-divider { width: 1px; height: 36px; background: var(--border2); flex-shrink: 0; }
 
 .table-wrapper {
-    background: var(--white);
+    background: #ffffff;
     border: 1px solid var(--border); border-top: none;
     border-radius: 0 0 20px 20px;
     overflow: hidden; box-shadow: var(--shadow-md);
@@ -289,7 +290,7 @@ table { width: 100%; border-collapse: collapse; }
 thead tr { background: var(--white); border-bottom: 1.5px solid var(--border); }
 thead th { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--bloom2); padding: 15px 24px; text-align: left; }
 
-tbody tr { border-bottom: 1px solid rgba(180,100,130,0.07); transition: background 0.15s; animation: rowIn 0.3s ease both; }
+tbody tr { background: #ffffff; border-bottom: 1px solid rgba(180,100,130,0.07); transition: background 0.15s; animation: rowIn 0.3s ease both; }
 tbody tr:hover { background: rgba(245,230,236,0.4); }
 tbody tr:last-child { border-bottom: none; }
 
