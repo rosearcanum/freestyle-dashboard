@@ -41,7 +41,7 @@ function formatDuration(raw) {
 }
 
 // ---- TOAST NOTIFICATIONS ----
-function showToast(message) {
+function showToast(message, duration = 10000) {
     const container = document.getElementById('toast-container');
     if (!container) return;
     const toast = document.createElement('div');
@@ -53,8 +53,8 @@ function showToast(message) {
     });
     setTimeout(() => {
         toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 400);
-    }, 4000);
+        setTimeout(() => toast.remove(), 500);
+    }, duration);
 }
 
 // ---- MOBILE SIDEBAR ----
@@ -374,7 +374,7 @@ function updateCountdowns() {
         row.style.opacity = '0';
         setTimeout(() => {
             row.remove();
-            showToast('🌸 ' + name + ' has left the ice');
+            showToast('⏰ ' + name + "'s time has run out", 10000);
         }, 700);
     });
 
