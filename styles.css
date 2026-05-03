@@ -13,6 +13,7 @@
     overflow: hidden;
     z-index: 90;
     box-shadow: 0 -3px 16px rgba(10,40,80,0.25);
+    white-space: nowrap;
 }
 .ticker-label {
     background: var(--accent);
@@ -30,10 +31,17 @@
     flex-shrink: 0;
     z-index: 1;
 }
+.ticker-content {
+    display: flex;
+    flex-shrink: 0;
+    min-width: 100%;
+    overflow: hidden;
+}
 .ticker-track {
     display: flex;
-    animation: ticker-scroll 28s linear infinite;
-    white-space: nowrap;
+    flex-shrink: 0;
+    animation: ticker-scroll 35s linear infinite;
+    will-change: transform;
 }
 .ticker-track:hover { animation-play-state: paused; }
 .ticker-item {
@@ -44,6 +52,8 @@
     padding: 0 80px;
     color: rgba(255,255,255,0.95);
     white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-block;
 }
 .ticker-item span {
     color: #7dd3fc;
@@ -51,7 +61,7 @@
 }
 @keyframes ticker-scroll {
     0%   { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+    100% { transform: translateX(-100%); }
 }
 
 /* Sidebar overlay for desktop */
