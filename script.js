@@ -13,7 +13,6 @@ let tickInterval    = null;
 let allSkaterData   = [];
 let zamboniTimes    = [];
 
-// Normalizes whatever is in the Duration column to a friendly label
 function formatDuration(raw) {
     if (!raw || raw.trim() === '') return '—';
     const s = raw.trim().toLowerCase();
