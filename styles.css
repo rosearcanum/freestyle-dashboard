@@ -1,7 +1,4 @@
-
-/* =============================================
-   SCROLLING TICKER
-   ============================================= */
+ 
 .ticker-wrap {
     position: fixed;
     bottom: 0; left: 0; right: 0;
@@ -110,9 +107,6 @@ body {
     min-height: 100vh;
 }
 
-/* =============================================
-   TOAST
-   ============================================= */
 #toast-container {
     position: fixed; bottom: 90px; left: 50%;
     transform: translateX(-50%); z-index: 999;
@@ -132,14 +126,8 @@ body {
 }
 .toast.show { opacity: 1; transform: translateY(0); }
 
-/* =============================================
-   LAYOUT
-   ============================================= */
 .layout { display: flex; min-height: 100vh; }
 
-/* =============================================
-   SIDEBAR
-   ============================================= */
 .sidebar {
     width: 320px; flex-shrink: 0;
     background: var(--white);
@@ -208,9 +196,6 @@ body {
 }
 .sidebar.open { transform: translateX(0) !important; }
 
-/* =============================================
-   MAIN
-   ============================================= */
 .main { flex: 1; padding: 36px 28px 90px; min-width: 0; }
 
 header {
@@ -318,9 +303,6 @@ tbody tr.row-warning .td-name { color: var(--warn); }
 footer { margin-top: 18px; text-align: center; font-size: 0.67rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.8); }
 .footer-sep { margin: 0 10px; opacity: 0.5; }
 
-/* =============================================
-   RESPONSIVE
-   ============================================= */
 @media (max-width: 900px) {
     .layout { flex-direction: column; }
     .sidebar {
