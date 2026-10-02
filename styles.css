@@ -1,4 +1,4 @@
- 
+
 .ticker-wrap {
     position: fixed;
     bottom: 0; left: 0; right: 0;
@@ -37,7 +37,7 @@
 .ticker-track {
     display: flex;
     flex-shrink: 0;
-    animation: ticker-scroll 35s linear infinite;
+    animation: ticker-scroll 80s linear infinite;
     will-change: transform;
 }
 .ticker-track:hover { animation-play-state: paused; }
@@ -61,7 +61,6 @@
     100% { transform: translateX(-100%); }
 }
 
-/* Sidebar overlay for desktop */
 .sidebar-overlay {
     display: none;
     position: fixed;
@@ -323,7 +322,6 @@ footer { margin-top: 18px; text-align: center; font-size: 0.67rem; font-weight: 
     .stat-value { font-size: 1.2rem; }
     .stat-label { font-size: 0.48rem; }
 
-    /* Hide Coach (2), Duration (3), Time On (4) — show Name, Time Off, Time Remaining only */
     table th:nth-child(2), table td:nth-child(2),
     table th:nth-child(3), table td:nth-child(3),
     table th:nth-child(4), table td:nth-child(4) { display: none !important; }
